@@ -15,13 +15,6 @@ using CmsData.API;
 using Dapper;
 using Microsoft.Scripting.Hosting;
 
-using iTextSharp.text;
-using iTextSharp.text.pdf;
-using iTextSharp.tool.xml;
-using iTextSharp.text.html.simpleparser;
-
-
-
 namespace CmsData
 {
     public class PythonEvents : IPythonApi
@@ -828,63 +821,5 @@ print sb.getvalue()
             }
         }
 
-
-
-        public void Report2PDF(string report)
-        {
-            var script = db.ContentOfTypePythonScript(report);
-            if (script == null)
-                return;
-
-            var html1 = RunScript(script);
-            //var htmlstream = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(html1));
-
-            //var Response = context.HttpContext.Response;
-            //Response.Clear();
-            //Response.ContentType = "application/pdf";
-            //Response.AddHeader("content-disposition", "filename=foo.pdf");
-
-            try
-            {
- 
-                //var output = OutputFile();
-
-                var output = "C:\\Temp\\foo.pdf";
-                Document document = new Document(PageSize.LETTER);
-                PdfWriter pdfWriter = PdfWriter.GetInstance
-                     (document, new FileStream(output, FileMode.Create));
-                
-                document.Open();
-                document.AddAuthor("Heath Kouns");
-                document.AddSubject("Thanks for your support");
-                document.AddCreationDate();
-                document.AddTitle("Report");
-
-                XMLWorkerHelper worker = XMLWorkerHelper.GetInstance();
-
-                worker.ParseXHtml(pdfWriter, document, new StringReader(html1));
-
-                
-                document.Close();
-            }
-            catch (Exception ex)
-            {
-                //return;
-            }
-        }
-
-        private static string OutputFile()
-        {
-            var output = ConfigurationManager.AppSettings["SharedFolder"].Replace("%USERPROFILE%", Environment.GetEnvironmentVariable("USERPROFILE"));
-            output = output + $"/Reports/Report2Pdf.pdf";
-            return output;
-        }
-
-
-
     }
-
-
-
-    }
-    
+}

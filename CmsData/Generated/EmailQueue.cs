@@ -53,9 +53,11 @@ namespace CmsData
 		private int? _SendFromOrgId;
 		
 		private bool? _FinanceOnly;
-		
-   		
-   		private EntitySet< EmailLink> _EmailLinks;
+
+        private string _CClist;
+
+
+        private EntitySet< EmailLink> _EmailLinks;
 		
    		private EntitySet< EmailQueueTo> _EmailQueueTos;
 		
@@ -124,9 +126,12 @@ namespace CmsData
 		
 		partial void OnFinanceOnlyChanging(bool? value);
 		partial void OnFinanceOnlyChanged();
-		
-    #endregion
-		public EmailQueue()
+
+        partial void OnCClistChanging(string value);
+        partial void OnCClistChanged();
+
+#endregion
+        public EmailQueue()
 		{
 			
 			this._EmailLinks = new EntitySet< EmailLink>(new Action< EmailLink>(this.attach_EmailLinks), new Action< EmailLink>(this.detach_EmailLinks)); 
@@ -543,12 +548,34 @@ namespace CmsData
 
 		}
 
-		
-    #endregion
-        
-    #region Foreign Key Tables
-   		
-   		[Association(Name="FK_EmailLinks_EmailQueue", Storage="_EmailLinks", OtherKey="EmailID")]
+
+        [Column(Name = "CClist", UpdateCheck = UpdateCheck.Never, Storage = "_CClist", DbType = "nvarchar")]
+        public string CClist
+        {
+            get { return this._CClist; }
+
+            set
+            {
+                if (this._CClist != value)
+                {
+
+                    this.OnCClistChanging(value);
+                    this.SendPropertyChanging();
+                    this._CClist = value;
+                    this.SendPropertyChanged("CClist");
+                    this.OnCClistChanged();
+                }
+
+            }
+
+        }
+
+
+        #endregion
+
+        #region Foreign Key Tables
+
+        [Association(Name="FK_EmailLinks_EmailQueue", Storage="_EmailLinks", OtherKey="EmailID")]
    		public EntitySet< EmailLink> EmailLinks
    		{
    		    get { return this._EmailLinks; }

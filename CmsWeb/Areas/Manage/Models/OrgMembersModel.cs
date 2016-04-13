@@ -163,7 +163,8 @@ namespace CmsWeb.Models
         {
             if (_members == null)
             {
-                var glist = new int[] { };
+
+                var glist = new int[] {};
                 var smallGroupList = new List<string>();
                 if (null != SmallGroup)
                 {

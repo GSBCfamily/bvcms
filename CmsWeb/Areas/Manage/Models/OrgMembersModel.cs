@@ -219,9 +219,6 @@ namespace CmsWeb.Models
 
         public IEnumerable<string> GetOrganizationSmallGroups()
         {
-            var g = new List<Dictionary<string, string>>();
-
-            var roles = DbUtil.Db.CurrentRoles();
             var q = from om in DbUtil.Db.OrganizationMembers
                     join org in DbUtil.Db.Organizations on om.OrganizationId equals org.OrganizationId
                     join omt in DbUtil.Db.OrgMemMemTags on om.OrganizationId equals omt.OrgId

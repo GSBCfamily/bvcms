@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Dapper;
 using UtilityExtensions;
 
@@ -178,6 +179,43 @@ namespace CmsData
         }
 
 
+
+        /// <summary>
+        /// Function takes a sql script and then places the results into an array.
+        /// Each row of SQL results is processed into a row of the array by creating a DateValueRow class
+        /// 
+        /// header: string containing the header row. (less the square brackets)
+        /// sql: string containing the sql script.
+        /// 
+        /// Example:
+        /// 
+        /// 
+        /// If there are no results from the SQL query, then a table is returned that prints "NULL" on the chart
+        /// </summary>
+        public string SqlToDataArray(string header, string sql)
+        {
+            List<string> HeaderList = Regex.Split(header, @",(?=[^\}]*(?:\{|$))" ).ToList();
+
+            var cn = GetReadonlyConnection();
+            string declareqtagid = null;
+            if (sql.Contains("@qtagid"))
+            {
+                var id = db.FetchLastQuery().Id;
+                var tag = db.PopulateSpecialTag(id, DbUtil.TagTypeId_Query);
+                declareqtagid = $"DECLARE @qtagid INT = {tag.Id}\n";
+            }
+            sql = $"{declareqtagid}{sql}";
+            var q = cn.Query(sql);
+
+
+            var list = q.Select(rr => new ValueRow { SqlRow = rr, ColumnHeaders = HeaderList }).ToList();
+            if (list.Count == 0)
+                return @"[ ['No Data', 'Count'], ['Dummy Value 1', 1], ['Dummy Value 2', 2], ['Dummy Value 3', 3], ]";
+            return $@"[ [{header}], {string.Join(",\n", list)} ]";
+
+        }
+
+
         public int StatusCount(string flags)
         {
             if (flags == "F00")
@@ -214,6 +252,7 @@ namespace CmsData
             }
         }
 
+
         /// <summary>
         /// Takes a dynamic row resulting from executing SQL statement
         /// Expects one value to be labled "Date" 
@@ -233,7 +272,17 @@ namespace CmsData
             
             public override string ToString()
             {
-                Date = SqlRow.Date;
+                DateTime? tempdate = null;
+                tempdate = SqlRow.Date;
+
+                if (tempdate.HasValue)
+                {
+                    Date = SqlRow.Date;
+                }
+                else
+                {
+                    Date = SqlRow.Val0;
+                }
 
                 switch (Columns)
                 {
@@ -264,5 +313,72 @@ namespace CmsData
 
             }
         }
+
+        /// <summary>
+        /// Takes a dynamic row resulting from executing SQL statement
+        /// 
+        /// </summary>
+        public class ValueRow
+        {
+            public dynamic SqlRow { get; set; }
+            public List<string> ColumnHeaders { get; set; }
+
+            public override string ToString()
+            {
+                string tempstring = "  [ ";
+                int i = 0;
+
+                foreach (dynamic COL in SqlRow)
+                {
+                    if (i != 0)
+                    {
+                        tempstring = tempstring + ", ";
+                    }
+
+                    if (i >= ColumnHeaders.Count())
+                    {
+                        ColumnHeaders.Add(ColumnHeaders[ColumnHeaders.Count()-1]);
+                    }
+
+                    if (ColumnHeaders[i].Contains("date"))
+                    {
+
+                        tempstring = tempstring + $"new Date({COL.Value.Year}, {COL.Value.Month - 1}, {COL.Value.Day})";
+                    }
+                    else if (ColumnHeaders[i].Contains("number"))
+                    {
+
+                        tempstring = tempstring + COL.Value;
+                    }
+                    else if (ColumnHeaders[i].Contains("string"))
+                    {
+
+                        tempstring = tempstring + $"'{COL.Value}'";
+                    }
+                    else if (ColumnHeaders[i].Contains("boolean"))
+                    {
+
+                        tempstring = tempstring + $"'{COL.Value}'";
+                    }
+                    else if (ColumnHeaders[i].Contains("datetime"))
+                    {
+
+                        tempstring = tempstring + $"new Date({COL.Value.Year}, {COL.Value.Month - 1}, {COL.Value.Day}), {COL.Value.Hour}, {COL.Value.Minute}, {COL.Value.Second})";
+                    }
+                    else if (ColumnHeaders[i].Contains("timeofday"))
+                    {
+
+                        tempstring = tempstring + $"[{COL.Value.Hour}, {COL.Value.Minute}, {COL.Value.Second}]";
+                    }                 
+                    
+                    i = i + 1;
+                }
+                tempstring = tempstring + "]";
+
+                return tempstring;
+                
+            }
+        }
+
     }
 }

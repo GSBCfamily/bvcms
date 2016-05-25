@@ -19,6 +19,8 @@ namespace CmsWeb.Areas.Manage.Controllers
         [HttpPost]
         public ActionResult Move(OrgMembersModel m)
         {
+            if (m.List.Count == 0)
+                return Content("!None Selected");
             if (m.TargetId == 0)
                 return Content("!Target required");
             m.Move();

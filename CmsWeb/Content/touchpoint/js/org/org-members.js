@@ -13,6 +13,14 @@
         });
     };
 
+    $.ClearFilter = function () {
+        $("#SmallGroup").val('');
+        $("#Grades").val('');
+        $("#Age").val('');
+        $.RefreshPage();
+    };
+
+
     $(document).on('keyup keypress', 'form input[type="text"]', function (e) {
         if (e.keyCode == 13) {
             e.preventDefault();
@@ -20,6 +28,7 @@
         }
     });
     $('body').on('click', '#refresh', $.RefreshPage);
+    $('body').on('click', '#clearfilter', $.ClearFilter);
     $('body').on('change', '#ProgId', $.RefreshPage);
     $('body').on('change', '#SourceDivId', $.RefreshPage);
     $('body').on('change', '#SourceId', $.RefreshPage);

@@ -16,7 +16,7 @@ using CmsData.View;
 
 namespace CmsData
 {
-    public partial class OrganizationMember
+    public partial class OrganizationMember : ITableWithExtraValues
     {
         private const string STR_MeetingsToUpdate = "MeetingsToUpdate";
 
@@ -109,6 +109,7 @@ AND a.PeopleId = {2}
 
             db.EnrollmentTransactions.InsertOnSubmit(droptrans);
             db.OrgMemMemTags.DeleteAllOnSubmit(this.OrgMemMemTags);
+            db.OrgMemberExtras.DeleteAllOnSubmit(this.OrgMemberExtras);
             db.OrganizationMembers.DeleteOnSubmit(this);
             db.SubmitChanges();
         }
@@ -543,6 +544,207 @@ AND a.PeopleId = {2}
             if (leaderorgs == null)
                 return false;
             return leaderorgs.Contains(orgid.Value);
+        }
+
+        public IEnumerable<OrgMemberExtra> GetOrgMemberExtras()
+        {
+            return OrgMemberExtras.OrderBy(pp => pp.Field);
+        }
+        public OrgMemberExtra GetExtraValue(string field)
+        {
+            var ev = OrgMemberExtras.AsEnumerable().FirstOrDefault(ee => ee.Field.Equal(field));
+            if (ev == null)
+            {
+                ev = new OrgMemberExtra()
+                {
+                    OrganizationId = OrganizationId,
+                    PeopleId = PeopleId,
+                    Field = field,
+                };
+                OrgMemberExtras.Add(ev);
+            }
+            return ev;
+        }
+        public static OrgMemberExtra GetExtraValue(CMSDataContext db, int oid, int pid, string field)
+        {
+            //field = field.Replace('/', '-');
+            var q = from v in db.OrgMemberExtras
+                    where v.Field == field
+                    where v.OrganizationId == oid
+                    where v.PeopleId == pid
+                    select v;
+            var ev = q.SingleOrDefault();
+            if (ev == null)
+            {
+                ev = new OrgMemberExtra()
+                {
+                    OrganizationId = oid,
+                    PeopleId = pid,
+                    Field =  field,
+                    TransactionTime = DateTime.Now
+                };
+                db.OrgMemberExtras.InsertOnSubmit(ev);
+            }
+            return ev;
+        }
+
+        public void AddEditExtra(CMSDataContext db, string field, string value, bool multiline = false)
+        {
+            var omev = db.OrgMemberExtras.SingleOrDefault(oe => oe.OrganizationId == OrganizationId && oe.PeopleId == PeopleId && oe.Field == field);
+            if (omev == null)
+            {
+                omev = new OrgMemberExtra()
+                {
+                    OrganizationId = OrganizationId,
+                    PeopleId = PeopleId,
+                    Field = field,
+                };
+                db.OrgMemberExtras.InsertOnSubmit(omev);
+            }
+            omev.Data = value;
+            omev.DataType = multiline ? "text" : null;
+        }
+        public void AddToExtraText(string field, string value)
+        {
+            if (!value.HasValue())
+                return;
+            var ev = GetExtraValue(field);
+            ev.DataType = "text";
+            if (ev.Data.HasValue())
+                ev.Data = value + "\n" + ev.Data;
+            else
+                ev.Data = value;
+        }
+
+        public string GetExtra(CMSDataContext db, string field)
+        {
+            var oev = db.OrganizationExtras.SingleOrDefault(oe => oe.OrganizationId == OrganizationId && oe.Field == field);
+            if (oev == null)
+                return "";
+            if (oev.StrValue.HasValue())
+                return oev.StrValue;
+            if (oev.Data.HasValue())
+                return oev.Data;
+            if (oev.DateValue.HasValue)
+                return oev.DateValue.FormatDate();
+            if (oev.IntValue.HasValue)
+                return oev.IntValue.ToString();
+            return oev.BitValue.ToString();
+        }
+        public void AddEditExtraCode(string field, string value)
+        {
+            if (!field.HasValue())
+                return;
+            if (!value.HasValue())
+                return;
+            var ev = GetExtraValue(field);
+            ev.StrValue = value;
+            ev.TransactionTime = DateTime.Now;
+        }
+
+        public void AddEditExtraText(string field, string value, DateTime? dt = null)
+        {
+            if (!value.HasValue())
+                return;
+            var ev = GetExtraValue(field);
+            ev.Data = value;
+            ev.TransactionTime = dt ?? DateTime.Now;
+        }
+
+        public void AddEditExtraDate(string field, DateTime? value)
+        {
+            if (!value.HasValue)
+                return;
+            var ev = GetExtraValue(field);
+            ev.DateValue = value;
+            ev.TransactionTime = DateTime.Now;
+        }
+
+        public void AddEditExtraInt(string field, int value)
+        {
+            var ev = GetExtraValue(field);
+            ev.IntValue = value;
+            ev.TransactionTime = DateTime.Now;
+        }
+
+        public void AddEditExtraBool(string field, bool tf)
+        {
+            if (!field.HasValue())
+                return;
+            var ev = GetExtraValue(field);
+            ev.BitValue = tf;
+            ev.TransactionTime = DateTime.Now;
+        }
+
+        public void AddEditExtraValue(string field, string code, DateTime? date, string text, bool? bit, int? intn, DateTime? dt = null)
+        {
+            var ev = GetExtraValue(field);
+            ev.StrValue = code;
+            ev.Data = text;
+            ev.DateValue = date;
+            ev.IntValue = intn;
+            ev.BitValue = bit;
+            ev.UseAllValues = true;
+            ev.TransactionTime = dt ?? DateTime.Now;
+        }
+
+        public void RemoveExtraValue(CMSDataContext db, string field)
+        {
+            var ev = OrgMemberExtras.AsEnumerable().FirstOrDefault(ee => string.Compare(ee.Field, field, StringComparison.OrdinalIgnoreCase) == 0);
+            if (ev == null)
+                return;
+            db.OrgMemberExtras.DeleteOnSubmit(ev);
+            ev.TransactionTime = DateTime.Now;
+        }
+
+        public void LogExtraValue(string op, string field)
+        {
+            DbUtil.LogActivity($"EVOrgMem {op}:{field}", orgid: OrganizationId, peopleid: PeopleId);
+        }
+        public static void MoveToOrg(CMSDataContext db, int pid, int fromOrg, int toOrg, bool? moveregdata = true, int toMemberTypeId = -1)
+        {
+            if (fromOrg == toOrg)
+                return;
+            var om = db.OrganizationMembers.Single(m => m.PeopleId == pid && m.OrganizationId == fromOrg);
+            var tom = db.OrganizationMembers.SingleOrDefault(m => m.PeopleId == pid && m.OrganizationId == toOrg);
+            if (tom == null)
+            {
+                tom = InsertOrgMembers(db,
+                    toOrg, pid, MemberTypeCode.Member, DateTime.Now, null, om.Pending ?? false);
+                if (tom == null)
+                    return;
+            }
+            if (toMemberTypeId != -1)
+            {
+                tom.MemberTypeId = toMemberTypeId;
+            }
+            else
+            {
+                tom.MemberTypeId = om.MemberTypeId;
+            }
+            tom.UserData = om.UserData;
+
+            if (moveregdata == true)
+            {
+                tom.Request = om.Request;
+                tom.Amount = om.Amount;
+                tom.OnlineRegData = om.OnlineRegData;
+                tom.RegistrationDataId = om.RegistrationDataId;
+                tom.Grade = om.Grade;
+                tom.RegisterEmail = om.RegisterEmail;
+                tom.ShirtSize = om.ShirtSize;
+                tom.TranId = om.TranId;
+                tom.Tickets = om.Tickets;
+
+                var sg = om.OrgMemMemTags.Select(mt => mt.MemberTag.Name).ToList();
+                foreach (var s in sg)
+                    tom.AddToGroup(db, s);
+            }
+
+            if (om.OrganizationId != tom.OrganizationId)
+                tom.Moved = true;
+            om.Drop(db);
+            db.SubmitChanges();
         }
     }
 }

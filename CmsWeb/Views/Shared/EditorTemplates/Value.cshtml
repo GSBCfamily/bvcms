@@ -20,7 +20,7 @@
         var dv = Model.DataValue;
         var ds = Model.DataSource;
         <td>
-          <a href="#" data-pk="@Model.Id"
+          <a href="#" data-pk="@Model.PrimaryKey"
              data-name="@Model.DataName"
              class="@Model.EditableClass"
              style="white-space: pre-line;"
@@ -38,10 +38,14 @@
       {
         var verb = Model.Standard ? "Clear" : "Delete";
         <td style="width: 50px;">
-          <a href="@Model.DeleteUrl" class="ajax btn btn-danger btn-sm"
-             data-confirm="Are you sure?" data-confirm-type="warning" data-confirm-btn-class="btn-danger" data-confirm-btn-text="Yes, @(verb)!">
+          <a href="@Model.DeleteUrl" 
+             class="ajax btn btn-danger btn-xs"
+             data-confirm="Are you sure?"
+             data-confirm-type="warning"
+             data-confirm-btn-class="btn-danger" 
+             data-confirm-btn-text="Yes, @(verb)!">
             <i class="fa fa-trash"></i>
-            @(Model.Standard ? "Clear" : "Delete")
+            @verb
           </a>
         </td>
       }

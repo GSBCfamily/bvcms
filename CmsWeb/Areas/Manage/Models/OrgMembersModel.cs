@@ -50,6 +50,7 @@ namespace CmsWeb.Models
 **Match a sub-group name.**
 
 * Use a semi-colon (`;`) to separate multiple sub-groups.
+* Lead with a minus sign (`-`) to exclude a sub-group.
 * `ALL:` to match people who are in each group specified.
 * `NONE` to match people who are not in a group.
 * When there are more groups than fit into the textbox, most browsers will let you resize that box so you can see the rest.
@@ -188,11 +189,12 @@ namespace CmsWeb.Models
             {
                 var glist = new int[] {};
                 var smallGroupList = new List<string>();
+                var excludeSmallGroupList = new List<string>();
                 var matchAllSubgroups = false;
                 var matchNoSubgroups = false;
                 if (null != SmallGroup)
                 {
-                    if (SmallGroup.Equals("None", StringComparison.InvariantCultureIgnoreCase))
+                    if (SmallGroup.Equals("None Assigned", StringComparison.InvariantCultureIgnoreCase))
                     {
                         matchNoSubgroups = true;
                     }
@@ -210,11 +212,23 @@ namespace CmsWeb.Models
                         }
                         else if (SmallGroup.Contains(","))
                         {
-                            smallGroupList.AddRange(SmallGroup.Split(';').Select(x => x.Trim()));
+                            smallGroupList.AddRange(SmallGroup.Split(',').Select(x => x.Trim()));
                         }
                         else
                         {
                             smallGroupList.Add(SmallGroup);
+                        }
+                    }
+
+                    // Check if any of the small groups should be excluded and if so remove them
+                    // from smallGroupList.  Iterate the list in reverse since we're mutating the
+                    // list as it is being processed.
+                    for (int i = smallGroupList.Count() - 1; i >= 0; i--)
+                    {
+                        if (smallGroupList[i].StartsWith("-"))
+                        {
+                            excludeSmallGroupList.Add(smallGroupList[i].Substring(1));
+                            smallGroupList.RemoveAt(i);
                         }
                     }
                 }
@@ -229,7 +243,7 @@ namespace CmsWeb.Models
                         where !MembersOnly || om.MemberTypeId == MemberTypeCode.Member
                         select om;
 
-                if (smallGroupList.Count() > 0)
+                if (smallGroupList.Count() > 0 || excludeSmallGroupList.Count() > 0)
                 {
                     if (matchAllSubgroups)
                     {
@@ -242,10 +256,18 @@ namespace CmsWeb.Models
                     }
                     else
                     {
-                        q = from om in q
-                            where om.OrgMemMemTags.Any(mm => smallGroupList.Contains(mm.MemberTag.Name))
-                            select om;
-
+                        if (smallGroupList.Count() > 0)
+                        {
+                            q = from om in q
+                                where om.OrgMemMemTags.Any(mm => smallGroupList.Contains(mm.MemberTag.Name))
+                                select om;
+                        }
+                        if (excludeSmallGroupList.Count() > 0)
+                        {
+                            q = from om in q
+                                where om.OrgMemMemTags.All(mm => !excludeSmallGroupList.Contains(mm.MemberTag.Name))
+                                select om;
+                        }
                     }
                 }
                 else if (matchNoSubgroups)

@@ -136,6 +136,15 @@
         $.RefreshPage();
     });
 
+    $('body').on('click', '#excludesg', function (ev) {
+        ev.stopPropagation();
+        $(this).toggleClass("active");
+        if ($(this).hasClass("active"))
+            $("a.selectsg .fa-minus").show();
+        else
+            $("a.selectsg .fa-minus").hide();
+    });
+
     $('body').on('click', 'a.selectsg', function (ev) {
         ev.preventDefault();
         var t = $(this).text();
@@ -160,13 +169,19 @@
                 }
                 break;
             default:
-                if (sg && !sg.match(/^ALL:$/i) && !sg.match(/^NONE ASSIGNED$/i)) {
+                if (sg.match(/^NONE ASSIGNED$/i)) {
+                    sg = '';
+                }
+                if (sg && !sg.match(/^ALL:$/i)) {
                     sg = sg + ';';
                 }
+                if ($("#excludesg").hasClass("active"))
+                    t = '-' + t;
                 sg = sg + t;
                 break;
         }
         $("#SmallGroup").val(sg);
+        $("#excludesg").removeClass("active");
         $("a.selectsg .fa-minus").hide();
         return false;
     });

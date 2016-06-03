@@ -152,8 +152,8 @@
         switch (t) {
             case "Match All":
                 // Remove any leading NONE ASSIGNED
-                if (sg.match(/^NONE ASSIGNED/i)) {
-                    sg = sg.substring(14);
+                if (sg.match(/^NONE/i)) {
+                    sg = sg.substring(4);
                 }
                 if (!sg.match(/^ALL:/i)) {
                     sg = "All:" + sg;
@@ -165,11 +165,11 @@
                     sg = sg.substring(4);
                 }
                 if (!sg.match(/^NONE ASSIGNED/i)) {
-                    sg = "None Assigned";
+                    sg = "None";
                 }
                 break;
             default:
-                if (sg.match(/^NONE ASSIGNED$/i)) {
+                if (sg.match(/^NONE$/i)) {
                     sg = '';
                 }
                 if (sg && !sg.match(/^ALL:$/i)) {

@@ -50,7 +50,7 @@ namespace CmsWeb.Models
 **Match a sub-group name.**
 
 * Use a semi-colon (`;`) to separate multiple sub-groups.
-* Lead with a minus sign (`-`) to exclude a sub-group.
+* Lead with a minus sign (`-`) to exclude a sub-group. In the drop down, click `EXCLUDE` then click a sub-group name.
 * `ALL:` to match people who are in each group specified.
 * `NONE` to match people who are not in a group.
 * When there are more groups than fit into the textbox, most browsers will let you resize that box so you can see the rest.
@@ -194,7 +194,7 @@ namespace CmsWeb.Models
                 var matchNoSubgroups = false;
                 if (null != SmallGroup)
                 {
-                    if (SmallGroup.Equals("None Assigned", StringComparison.InvariantCultureIgnoreCase))
+                    if (SmallGroup.Equals("None", StringComparison.InvariantCultureIgnoreCase))
                     {
                         matchNoSubgroups = true;
                     }

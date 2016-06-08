@@ -13,6 +13,13 @@
         });
     };
 
+    $.ClearFilter = function () {
+        $("#SmallGroup").val('');
+        $("#Grades").val('');
+        $("#Age").val('');
+        $.RefreshPage();
+    };
+
     $(document).on('keyup keypress', 'form input[type="text"]', function (e) {
         if (e.keyCode == 13) {
             e.preventDefault();
@@ -20,6 +27,7 @@
         }
     });
     $('body').on('click', '#refresh', $.RefreshPage);
+    $('body').on('click', '#clearfilter', $.ClearFilter);
     $('body').on('change', '#ProgId', $.RefreshPage);
     $('body').on('change', '#SourceDivId', $.RefreshPage);
     $('body').on('change', '#SourceId', $.RefreshPage);
@@ -127,24 +135,52 @@
         $.RefreshPage();
     });
 
+    $('body').on('click', '#excludesg', function (ev) {
+        ev.stopPropagation();
+        $(this).toggleClass("active");
+        if ($(this).hasClass("active"))
+            $("a.selectsg .fa-minus").show();
+        else
+            $("a.selectsg .fa-minus").hide();
+    });
+
     $('body').on('click', 'a.selectsg', function (ev) {
         ev.preventDefault();
         var t = $(this).text();
         var sg = $("#SmallGroup").val();
         switch (t) {
             case "Match All":
-                if (!sg.match(/^ALL/i)) {
+                // Remove any leading NONE ASSIGNED
+                if (sg.match(/^NONE/i)) {
+                    sg = sg.substring(4);
+                }
+                if (!sg.match(/^ALL:/i)) {
                     sg = "All:" + sg;
                 }
                 break;
+            case "None Assigned":
+                // Remove any leading ALL:
+                if (sg.match(/^ALL:/i)) {
+                    sg = sg.substring(4);
+                }
+                if (!sg.match(/^NONE ASSIGNED/i)) {
+                    sg = "None";
+                }
+                break;
             default:
+                if (sg.match(/^NONE$/i)) {
+                    sg = '';
+                }
                 if (sg && !sg.match(/^ALL:$/i)) {
                     sg = sg + ';';
                 }
+                if ($("#excludesg").hasClass("active"))
+                    t = '-' + t;
                 sg = sg + t;
                 break;
         }
         $("#SmallGroup").val(sg);
+        $("#excludesg").removeClass("active");
         $("a.selectsg .fa-minus").hide();
         return false;
     });

@@ -122,7 +122,13 @@
                                     else
                                     {
                                         <li>
+                                            <a href="#" id="excludesg"><i class="fa fa-minus hide"></i>Exclude</a>
+                                        </li>
+                                        <li>
                                             <a href="#" class="selectsg"><i class="fa fa-minus hide"></i>Match All</a>
+                                        </li>
+                                        <li>
+                                            <a href="#" class="selectsg"><i class="fa fa-minus hide"></i>None Assigned</a>
                                         </li>
                                         foreach (var sg in subgroups)
                                         {
@@ -193,6 +199,7 @@
                 </div>
                 <div class="col-lg-3 col-lg-offset-6 col-md-3 col-md-offset-6 col-sm-4 col-sm-offset-4">
                     <div class="pull-right">
+                        <button class="btn btn-default" id="clearfilter" name="clearfilter">Clear Filters</button>
                         <button class="btn btn-default" id="refresh" name="refresh">Refresh</button> 
                     </div>
                 </div>

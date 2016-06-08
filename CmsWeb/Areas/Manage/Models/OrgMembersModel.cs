@@ -49,7 +49,10 @@ namespace CmsWeb.Models
         public HtmlString SgFilterHelp => ViewExtensions2.Markdown(@"
 **Match a sub-group name.**
 
+* Partial match just the first few letters of a sub-group when you follow with asterisk (`*`)
+* Lead with a minus sign (`-`) to exclude a sub-group.
 * Use a semi-colon (`;`) to separate multiple sub-groups.
+* `NONE` to find no sub-groups assigned.
 * `ALL:` to match people who are in each group specified.
 * When there are more groups than fit into the textbox, most browsers will let you resize that box so you can see the rest.
 ");
